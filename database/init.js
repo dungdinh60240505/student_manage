@@ -4,13 +4,10 @@ dotenv.config()
 
 const options = {
     useNewUrlParser: true,
-    autoIndex: true, // this is the code I added that solved it all
-    keepAlive: true,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 45000,
-    family: 4, // Use IPv4, skip trying IPv6
     useUnifiedTopology: true,
-};
+    autoIndex: true,
+}
+
 
 mongoose
 exports.optsValidator = {
@@ -27,15 +24,5 @@ mongoose
     })
     .catch((err) => console.log("Lỗi file connectDB", err))
 
-exports.listCollections = async function () {
-    try {
-        
-        const collections = await mongoose.connection.db.listCollections().toArray();
-        console.log('Danh sách collections:');
-        // collections.forEach(col => console.log(col.name));
-        return collections.map(col => col.name);
-    } catch (err) {
-        console.error('Lỗi khi lấy collections:', err);
-    }
-}
+
 
