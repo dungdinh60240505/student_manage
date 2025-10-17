@@ -13,5 +13,7 @@ router.post("/login", user.login);
 const student = require('../controllers/student/index');
 
 router.post("/student-add", authenToken, middleware_upload_single('avatar','public/upload/avatar'), student.insert);
+router.put("/student-update", authenToken, middleware_upload_single('avatar','public/upload/avatar'), student.update);
 router.get("/student-list", authenToken, student.get_list_student);
+router.delete("/student-remove/:id", authenToken, student.remove_student);
 module.exports = router
