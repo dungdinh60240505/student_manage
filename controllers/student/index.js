@@ -59,9 +59,7 @@ exports.get_list_student = async (req, res) => {
         let query = {}
         if(search){
             query = {
-               
-                unsign_search: {$regex:".*"+search+".*",$options:"i"},
-                  
+                unsign_search: {$regex:".*"+search+".*",$options:"i"},        
             }
         }
 
