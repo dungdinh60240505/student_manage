@@ -26,3 +26,8 @@ mongoose
 
 
 
+// DB_CONNECTION: mongodb://localhost:21707/
+
+//DB_NAME: user
+
+

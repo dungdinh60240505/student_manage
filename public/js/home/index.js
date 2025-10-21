@@ -18,30 +18,27 @@ btn_save.addEventListener('click', async () => {
         if(!birthday) throw new Error('Vui lòng nhập ngày sinh')
         if(!age) throw new Error('Vui lòng nhập tuổi')
         if(!class_name) throw new Error('Vui lòng nhập lớp học')
-        if(!avatar) throw new Error('Vui lòng nhập avatar')
+        //if(!avatar) throw new Error('Vui lòng nhập avatar')
             
         const formData = new FormData()
         formData.append('name', name)
         formData.append('birthday', birthday)
         formData.append('age', age)
         formData.append('class_name', class_name)
-        formData.append('avatar', avatar)
         formData.append('gender', gender)
-
+        if(avatar) formData.append('avatar', avatar)
         const res = await fetch('/student-add', {
             method: 'POST',
             body: formData
         })
-
         const data = await res.json()
         if(data.error) throw new Error(data.error)
-        
         alert("Thêm học sinh thành công")
         input_add_name.value = null
         input_add_birthday.value = null
         input_add_age.value = null
         input_add_class.value = null
-        input_add_avatar.files[0] = null
+        input_add_avatar.value = null
         getData()
     } catch (error) {
         console.error(error)
@@ -69,7 +66,7 @@ btn_save_edit.addEventListener('click', async () => {
         if(!birthday) throw new Error('Vui lòng nhập ngày sinh')
         if(!age) throw new Error('Vui lòng nhập tuổi')
         if(!class_name) throw new Error('Vui lòng nhập lớp học')
-        // if(!avatar) throw new Error('Vui lòng nhập avatar')
+        //if(!avatar) throw new Error('Vui lòng nhập avatar')
         
         const id = btn_save_edit.dataset.id
         const formData = new FormData()
@@ -77,7 +74,7 @@ btn_save_edit.addEventListener('click', async () => {
         formData.append('birthday', birthday)
         formData.append('age', age)
         formData.append('class_name', class_name)
-        formData.append('avatar', avatar)
+        if(avatar) formData.append('avatar', avatar)
         formData.append('gender', gender)
         formData.append('id', id)
 
@@ -102,10 +99,12 @@ input_search.addEventListener('input', async () => {
     page=1
     getData()
 })
+
 async function getData(){
     try {
-        const search = input_search.value
+        const search = input_search.value;
         const url = `/student-list?search=${encodeURIComponent(search)}&page=${page}`;
+        console.log(url);
         const data = await fetch(url, {
             method: 'GET',
             headers: {
@@ -113,9 +112,8 @@ async function getData(){
             }
         });
         const data_json = await data.json()
-
         drawTable(data_json.data)
-        const {limit, count, length} = data_json
+        const {count,limit, length} = data_json
         renderPagination(count, page, limit, length)
     } catch (error) {
         console.error(error)
@@ -123,7 +121,49 @@ async function getData(){
 }
 
 const popupEdit = new bootstrap.Modal(document.getElementById('popup_edit'));
+escapehtml = (str) => {
+    str = str.toString();
+    // Danh sách các ký tự cần thay thế
+    const escapeChars = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;",
+        ")": "&#041;",
+        "(": "&#040;",
+        "/": "&#047;",
+        "\\": "&#092;",
+        "`": "&#096;",
+        "=": "&#061;",
+        "%": "&#037;",
+        ";": "&#059;",
+        ":": "&#058;",
+        ",": "&#044;",
+        ".": "&#046;",
+        "?": "&#063;",
+        "!": "&#033;",
+        "@": "&#064;",
+        "#": "&#035;",
+        "$": "&#036;",
+        "^": "&#094;",
+        "*": "&#042;",
+        "+": "&#043;",
+        "|": "&#124;",
+        "[": "&#091;",
+        "]": "&#093;",
+        "{": "&#123;",
+        "}": "&#125;",
+        "~": "&#126;"
+    };
+
+    // Sử dụng replace với callback function để tránh lỗi thay thế nhiều lần
+    str = str.replace(/[&<>"'()/\\`=%;:,?.!@#$^*+|[\]{}~]/g, (match) => escapeChars[match]);
+
+    return str;
+};
 function drawTable(data){
+    console.log("Dang ve bang du lieu");
     tbody_table.innerHTML = ''
     data.forEach(item => {
         const tr = document.createElement('tr')
@@ -178,13 +218,13 @@ function drawTable(data){
                     cancelButtonAriaLabel: "Thumbs down"
                   }).then(async (result) => {
                     if (result.isConfirmed) {
+                        console.log("==========confirm xoá =============");
                         const data = await fetch(`/student-remove/${item._id}`, {
                             method: 'DELETE',
                             headers: {
                                 'Content-Type': 'application/json'
                             }
                         })
-
                         const data_json = await data.json()
                         if(data_json.error) throw new Error(data_json.error)
                         getData()
@@ -197,12 +237,9 @@ function drawTable(data){
         tbody_table.appendChild(tr)
     });
 }
-
 function addZero(val, length = 2) {
 	return String(val).padStart(length, '0')
 }
-
-
 function format_date(str_date, str_format = 'YYYY-MM-dd') {
 	const date = new Date(str_date)
 	if (!str_date || date == 'Invalid Date') return str_date
@@ -218,15 +255,12 @@ function format_date(str_date, str_format = 'YYYY-MM-dd') {
 	str_format = str_format.replace('YYYY', year).replace('yyyy', year).replace('MM', month).replace('dd', day).replace('DD', day).replace('HH', hour).replace('hh', hour).replace('mm', minutes).replace('ss', seconds).replace('YY', year.toString().substring(2, 4)).replace('yy', year.toString().substring(2, 4))
 	return str_format
 }
-
-
-
-
+// phân trang
 function renderPagination(total_page, currentPage, page_size, length) {
+    console.log("Dang phan trang")
     const div_pagination = document.getElementById('div_pagination')
-    if(currentPage == 1 && length < page_size) return ''
+    if(currentPage == 1 && length < page_size) return '' // nếu số dữ liệu bé hơn limit 1 trang thì không cần chạy phân trang
     let paginationHTML = `<ul class="pagination pagination-secondary pagin-border-secondary">`;
-
     // Previous button
     if (currentPage > 1) {
         paginationHTML += `
@@ -243,16 +277,13 @@ function renderPagination(total_page, currentPage, page_size, length) {
                 </a>
             </li>`;
     }
-
     // Hiển thị các trang gần với currentPage
     const maxPagesToShow = 3;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(total_page, startPage + maxPagesToShow - 1);
-
     if (endPage - startPage < maxPagesToShow - 1) {
         startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
-
     // Nếu trang bắt đầu không phải là 1, thêm dấu "..."
     if (startPage > 1) {
         paginationHTML += `
@@ -266,7 +297,6 @@ function renderPagination(total_page, currentPage, page_size, length) {
                 </li>`;
         }
     }
-
     // Hiển thị các số trang
     for (let i = startPage; i <= endPage; i++) {
         if (i === currentPage) {
@@ -281,7 +311,6 @@ function renderPagination(total_page, currentPage, page_size, length) {
                 </li>`;
         }
     }
-
     // Nếu trang kết thúc không phải là trang cuối cùng, thêm dấu "..."
     if (endPage < total_page) {
         if (endPage < total_page - 1) {
@@ -295,7 +324,6 @@ function renderPagination(total_page, currentPage, page_size, length) {
                 <a class="page-link" href="javascript:void(0)" data-page="${total_page}">${total_page}</a>
             </li>`;
     }
-
     // Next button
     if (currentPage < total_page) {
         paginationHTML += `
@@ -312,25 +340,20 @@ function renderPagination(total_page, currentPage, page_size, length) {
                 </a>
             </li>`;
     }
-
     paginationHTML += `</ul>`;
-
    div_pagination.innerHTML = paginationHTML
+    // thêm event listener
     div_pagination.querySelectorAll('.pagination .page-link').forEach(item => {
         item.addEventListener('click', function (e) {
+            console.log("ban vua click vao o phan trang")
             e.preventDefault();
             page = parseInt(this.getAttribute('data-page'));
+            if(isNaN(page)) return;
             getData();
         });
-    });
-    
+    }, { once:true });
     // Thêm sự kiện click cho các nút trang
-    
 }
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
-    getData()
+    getData();
 })
-

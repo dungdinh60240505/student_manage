@@ -29,6 +29,7 @@ app.use(cookieParser())
 app.set('views', './views')
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
+app.use(express.static('upload'))
 app.use(logger('dev'))
 
 app.listen(port, () => {
