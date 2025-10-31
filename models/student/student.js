@@ -41,13 +41,11 @@ const schema = new mongoose.Schema({
     //     }
     // ]
 },{ timestamps: true});
-schema.index({usign_search:1});
-schema.index({tokens_unsign:1});
-schema.index({ngrams_unsign:1});
+schema.index({unsign_search:1});
 
 schema.post(['save','findOneAndUpdate'],async function(doc, next){
     if(doc){
-        await ModelStudent.updateSearch(doc)
+        await ModelStudent.updateSearch(doc) // chuyển giá trị nhập ở thanh search => string để search
     }
     next();
 })
@@ -77,7 +75,9 @@ function simple_edge_n_grams(tokens, min=1, max=8){
     return Array.from(new Set(res));
 }
 const ModelStudent = mongoose.model('student', schema)
+
 module.exports = ModelStudent
+
 const init = async () =>{
     try {
         const data = await ModelStudent.find()
@@ -94,7 +94,7 @@ const init = async () =>{
         console.log(error);
     }
 }
-// init()
+//init()
 function randomVietnameseName() {
   const ho = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Phan", "Ngô", "Đinh"];
   const dem = ["Văn", "Thị", "Hữu", "Minh", "Ngọc", "Gia", "Anh", "Quốc", "Thanh","Khánh", "Huyền"];
@@ -111,7 +111,7 @@ function randomVietnameseName() {
 ModelStudent.updateSearch = async (doc) =>{
     try {
         let search = ` ${convert_string_to_search(doc.name)} ${doc.age}`
-        search += ` ${search.replace(/\s+/g, '')}`
+        search += ` ${search.replace(/\s+/g, '')}` 
 
         await ModelStudent.updateOne({
             _id: doc._id
@@ -120,17 +120,17 @@ ModelStudent.updateSearch = async (doc) =>{
                 unsign_search: search,
             }
         })
-        console.log("update thành côngc")
+        console.log("update thành công")
     } catch (error) {
         console.error(error);
-    }   
+    }
 }
 
-function convert_string_to_search(chuoi)  {
+function convert_string_to_search(chuoi)  {// Đinh Thế Dũng
 	if (!chuoi) return ''
 	chuoi = chuoi.toString()
 	var normalized = `${escapehtml(chuoi)} ${chuoi?.normalize('NFD').replace(/[\u0300-\u036f]/g, '')} ${escapehtml(chuoi?.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))}`
-	return normalized
+	return normalized 
 }
 
 function escapehtml(str) {

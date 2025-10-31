@@ -94,6 +94,7 @@ btn_save_edit.addEventListener('click', async () => {
         alert(error.message)
     }
 })
+
 const input_search = document.getElementById('input_search')
 let is_abort = null
 input_search.addEventListener('input', async () => {

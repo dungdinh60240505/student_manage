@@ -86,9 +86,10 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
         console.log("=======HAHAHA==========================");
         const { search: rawSearch } = req.query
         search = toUnsign(rawSearch || '');
-        const tokens = tokenizeName(rawSearch || '');
-        const ngrams = simple_edge_n_grams(tokens || '');
-
+        // const tokens = tokenizeName(rawSearch || '');
+        // const ngrams = simple_edge_n_grams(tokens || '');
+        
+        // giá trị search khi đến đây là của người dùng nhập
 
         let page = 1 // mặc định
         let limit = parseInt(req.query.limit) || 10; // nếu thay đổi limit khi GET thì lệnh này chạy
@@ -96,6 +97,7 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
             page = parseInt(req.query.page) // nếu thay đổi page khi GET thì lệnh này chạy
             if(page == 0) page = 1
         }
+        
         let query = {}
         if(search){
             const search_split = search.split(' ');
