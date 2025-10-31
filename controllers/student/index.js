@@ -120,7 +120,7 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
             data,
             count
         ] = await Promise.all([
-            ModelStudent.find(query).sort({createdAt:-1}).skip((page-1)*limit).limit(limit).lean(),//tìm data theo query->sắp xếp->bỏ qua lượng data ở số page trước->chặn trên=limit
+            ModelStudent.find(query).skip((page-1)*limit).limit(limit).lean(),//tìm data theo query->sắp xếp->bỏ qua lượng data ở số page trước->chặn trên=limit
             ModelStudent.countDocuments(query)
         ])
 
