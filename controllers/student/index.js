@@ -88,6 +88,8 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
         search = toUnsign(rawSearch || '');
         const tokens = tokenizeName(rawSearch || '');
         const ngrams = simple_edge_n_grams(tokens || '');
+
+
         let page = 1 // mặc định
         let limit = parseInt(req.query.limit) || 10; // nếu thay đổi limit khi GET thì lệnh này chạy
         if(req.query.page){
@@ -96,16 +98,24 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
         }
         let query = {}
         if(search){
+            const search_split = search.split(' ');
+            const array = []
+            search_split.forEach(item => {
+                array.push({
+                    $or: [
+						{ unsign_search: { $regex: '.*' + item + '.*', $options: 'i' } }, 
+					],
+                })
+            })
             query = {
-                $or: [
-                    {unsign_search: {$regex:".*"+search+".*",$options:"i"}},
-                    {ngrams_unsign: {$all: ngrams}}
-                ]     
+                ...query,
+                $and:[
+                    ...array
+                ]
             }
         }
 
-        console.time('get_list_student')
-
+      
         const [
             data,
             count
@@ -113,8 +123,7 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
             ModelStudent.find(query).sort({createdAt:-1}).skip((page-1)*limit).limit(limit).lean(),//tìm data theo query->sắp xếp->bỏ qua lượng data ở số page trước->chặn trên=limit
             ModelStudent.countDocuments(query)
         ])
-        console.timeEnd('get_list_student')
-        
+
         return res.status(200).json({
             data,
             count,
@@ -124,6 +133,7 @@ exports.get_list_student = async (req, res) => { // chạy mỗi khi getData()
         })
         // trả về array document, số lượng document, độ dài data, limit=10, page
     } catch (error) {
+        console.error(error)
         return res.status(400).json({ error: error.message })
     }
 }
