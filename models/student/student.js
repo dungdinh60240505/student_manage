@@ -28,27 +28,27 @@ const schema = new mongoose.Schema({
         type: String,
         index: true
     },// dinh the dung 20 at05
-    tokens_unsign:[
-        {
-            type: String
-        }
-    ],
-    // 'dinh', 'the', 'dung', '20', 'at05'
-    ngrams_unsign: [
-        {
-            type: String,
-            index: true
-        }
-    ]
+    // tokens_unsign:[
+    //     {
+    //         type: String
+    //     }
+    // ],
+    // // 'dinh', 'the', 'dung', '20', 'at05'
+    // ngrams_unsign: [
+    //     {
+    //         type: String,
+    //         index: true
+    //     }
+    // ]
 },{ timestamps: true});
 schema.index({usign_search:1});
 schema.index({tokens_unsign:1});
 schema.index({ngrams_unsign:1});
-schema.pre('save',function(next){
-    const s = `${this.name ?? ''} ${this.age ?? ''} ${this.class_name ?? ''}`; // "Đinh Thế Dũng"  "20"  "at05" -> "Dinh The Dung 20 at05"
-    this.unsign_search = toUnsign(s);
-    this.tokens_unsign = tokenizeName(s);
-    this.ngrams_unsign = simple_edge_n_grams(this.tokens_unsign);
+
+schema.post(['save','findOneAndUpdate'],async function(doc, next){
+    if(doc){
+        await ModelStudent.updateSearch(doc)
+    }
     next();
 })
 function toUnsign(s='') {
@@ -80,22 +80,21 @@ const ModelStudent = mongoose.model('student', schema)
 module.exports = ModelStudent
 const init = async () =>{
     try {
-        for(let i =0;i<500000;i++){
-            const data = await new ModelStudent({
-                name: randomVietnameseName(),
-                age: Math.floor(Math.random()*100),
-                birthday: new Date(),
-                class_name: `${Math.floor(Math.random()*100)}`,
-                gender: 'Nam',
-                avatar: '/image/default-avatar.jpg'
-            }).save();
-            console.log(data);
+        const data = await ModelStudent.find()
+        let i = 1;
+        for(let user of data){
+            await ModelStudent.findOneAndUpdate({
+                _id: user._id
+            },{
+                name: user.name,
+            },{new:true})
+            console.log(i++)
         }
     } catch (error) {
         console.log(error);
     }
 }
-//init()
+// init()
 function randomVietnameseName() {
   const ho = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Vũ", "Đặng", "Bùi", "Đỗ", "Phan", "Ngô", "Đinh"];
   const dem = ["Văn", "Thị", "Hữu", "Minh", "Ngọc", "Gia", "Anh", "Quốc", "Thanh","Khánh", "Huyền"];
@@ -107,3 +106,72 @@ function randomVietnameseName() {
   
   return `${h} ${d} ${t}`;
 }
+
+
+ModelStudent.updateSearch = async (doc) =>{
+    try {
+        let search = ` ${convert_string_to_search(doc.name)} ${doc.age}`
+        search += ` ${search.replace(/\s+/g, '')}`
+
+        await ModelStudent.updateOne({
+            _id: doc._id
+        },{
+            $set: {
+                unsign_search: search,
+            }
+        })
+        console.log("update thành côngc")
+    } catch (error) {
+        console.error(error);
+    }   
+}
+
+function convert_string_to_search(chuoi)  {
+	if (!chuoi) return ''
+	chuoi = chuoi.toString()
+	var normalized = `${escapehtml(chuoi)} ${chuoi?.normalize('NFD').replace(/[\u0300-\u036f]/g, '')} ${escapehtml(chuoi?.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))}`
+	return normalized
+}
+
+function escapehtml(str) {
+    str = str.toString();
+    // Danh sách các ký tự cần thay thế
+    const escapeChars = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;",
+        ")": "&#041;",
+        "(": "&#040;",
+        "/": "&#047;",
+        "\\": "&#092;",
+        "`": "&#096;",
+        "=": "&#061;",
+        "%": "&#037;",
+        ";": "&#059;",
+        ":": "&#058;",
+        ",": "&#044;",
+        ".": "&#046;",
+        "?": "&#063;",
+        "!": "&#033;",
+        "@": "&#064;",
+        "#": "&#035;",
+        "$": "&#036;",
+        "^": "&#094;",
+        "*": "&#042;",
+        "+": "&#043;",
+        "|": "&#124;",
+        "[": "&#091;",
+        "]": "&#093;",
+        "{": "&#123;",
+        "}": "&#125;",
+        "~": "&#126;"
+    };
+
+    // Sử dụng replace với callback function để tránh lỗi thay thế nhiều lần
+    str = str.replace(/[&<>"'()/\\`=%;:,?.!@#$^*+|[\]{}~]/g, (match) => escapeChars[match]);
+
+    return str;
+};
+

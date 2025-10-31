@@ -95,26 +95,55 @@ btn_save_edit.addEventListener('click', async () => {
     }
 })
 const input_search = document.getElementById('input_search')
+let is_abort = null
 input_search.addEventListener('input', async () => {
+    
     page=1
     getData()
 })
 
 async function getData(){
     try {
+        if(is_abort) is_abort.abort();
         const search = input_search.value;
-        const url = `/student-list?search=${encodeURIComponent(search)}&page=${page}`;
-        console.log(url);
-        const data = await fetch(url, {
+        const url = `/student-list`;
+     
+        is_abort = $.ajax({
+            url: url,
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
+            dataType: 'json',
+            contentType: 'application/json',
+            cache: false,
+            data:{
+                search: search,
+                page: page
+            },
+            success: function(data_json) {
+                console.log(data_json);
+                drawTable(data_json.data);
+
+                const { count, limit, length } = data_json;
+                renderPagination(count, page, limit, length);
+            },
+            error: function(xhr, status, error) {
+                console.error('Lỗi khi gọi AJAX:', error);
             }
         });
-        const data_json = await data.json()
-        drawTable(data_json.data)
-        const {count,limit, length} = data_json
-        renderPagination(count, page, limit, length)
+        // const search = input_search.value;
+        // const url = `/student-list?search=${encodeURIComponent(search)}&page=${page}`;
+        // console.log(url);
+        // const data = await fetch(url, {
+        //     method: 'GET',
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     }
+        // });
+        // const data_json = await data.json()
+        // drawTable(data_json.data)
+        // const {count,limit, length} = data_json
+        // renderPagination(count, page, limit, length)
+
+        
     } catch (error) {
         console.error(error)
     }
@@ -193,7 +222,11 @@ function drawTable(data){
                 input_edit_age.value = item.age
                 input_edit_class.value = item.class_name
                 image_avatar_edit.src = item.avatar
-                document.querySelector('input[name="input_edit_gender"][value="'+item.gender+'"]').checked = true
+                const input_gender = document.querySelector('input[name="input_edit_gender"][value="'+item.gender+'"]')
+                if(input_gender){
+                    input_gender.checked = true
+                }
+                
                 popupEdit.show()
 
             } catch (error) {
